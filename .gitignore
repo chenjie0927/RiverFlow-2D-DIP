@@ -6,6 +6,7 @@
 # JJ: Subdirectories and all its contents:
 .vs/
 .svn/
+.aaa/
 
 # User-specific files
 *.suo
