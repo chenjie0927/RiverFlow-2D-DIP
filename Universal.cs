@@ -12,8 +12,6 @@ namespace Simulation_Options
         public static string DIPLanguage; 
 
         public static bool EnableTextChangedEvent;
-		// New comment to text new file .gitignore
-		// And now a new one
 
         public static List<string[]> Solutes = new List<string[]>();
         public static string[] RecentProjects = new string[5];
