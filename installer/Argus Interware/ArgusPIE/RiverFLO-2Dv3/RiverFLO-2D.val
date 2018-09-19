@@ -1,0 +1,4 @@
+@MAXITER@ = 7
+@NSIGDIG@ = 5
+@CONV@ = 3
+@OVERRLAX@ = 7

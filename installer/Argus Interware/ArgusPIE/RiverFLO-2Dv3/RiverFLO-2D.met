@@ -1,0 +1,230 @@
+# RiverFLO-2D export template
+Define Variable: i [Integer]
+Define Variable: j [Integer]
+Define Variable: starti [Integer]
+Define Variable: last2 [Integer]
+Define Variable: NumberOfBoundarySegments [Integer]
+Define Variable: NumberOfBoundaryNodes [Integer]
+Define Variable: ok [Integer]
+Define Variable: control [Integer]
+Define Variable: ok2 [Integer]
+Define Variable: kk [Integer]
+Define Variable: veces [Integer]
+Define Variable: Test [Integer]
+Define Variable: pare [Integer]
+Define Variable: primero [Integer]
+Define Variable: atras [Integer]
+Set Variable: NumberOfBoundarySegments:= 0
+Define Variable: ll [Real]
+Define Variable: Test2 [Integer]
+# 
+# 
+Set Variable: j:= 0
+Set Variable: i:= -1
+Set Variable: last2:= 0
+Set Variable: NumberOfBoundaryNodes:= 2*CountNodes(NodeOnBoundary())
+# 
+# This part of the template will calculate the element edges that
+# are on the boundary of the mesh (triangular mesh) and load them
+# into an array (MyArray1.DLL)
+# 
+# This part is a modification of the OutEdge template
+# 
+Redirect output to: $BaseNameNoExt$.TBA
+	# 
+	# Initialize two arrays - for each one an Array PIE dll
+	# file must be in the Argus PIE directory
+	# 
+	Set Variable: ok:= 1
+	Set Variable: Test:= MyArray1Init(NumberOfBoundaryNodes)
+	If: IsNAN(Test)
+		Alert: "The PIE MyArray1.DLL could not be found! Please make sure such a PIE is in the ArgusPIE directory!"
+		Set Variable: ok:= 0
+	End if
+	# 
+	Set Variable: ok:= 1
+	Set Variable: Test:= MyArray2Init(NumberOfBoundaryNodes)
+	If: IsNAN(Test)
+		Alert: "The PIE MyArray2.DLL could not be found! Please make sure such a PIE is in the ArgusPIE directory!"
+		Set Variable: ok:= 0
+	End if
+	# 
+	If: ok
+		# Fill both arrays with zeros
+		Loop for: Variable i from: 0 to: NumberOfBoundaryNodes-1 step: 1
+			Evaluate expression: MyArray1Set(i,0)
+			Evaluate expression: MyArray2Set(i,0)
+		End loop
+		# 
+		# This part will loop through the elements and assign the array members the node numbers
+		# Set i to -1 because the arrays start at 0
+		Set Variable: i:= -1
+		# 
+		Loop for: Elements
+			# Output all boundary edges
+			# the output (for each edge )will be:
+			# elem node1 node2
+			# where:
+			# elem is the number of the element
+			# node1 is the first node of the edge (counterclockwise when looking from elem)
+			# node2 is the second node of the edge
+			If: NthNeighbourNum(1) = 0
+				Set Variable: i:= i+1
+				Evaluate expression: MyArray1Set(i,NthNodeNum(1))
+				Set Variable: i:= i+1
+				Evaluate expression: MyArray1Set(i,NthNodeNum(2))
+			End if
+			If: NthNeighbourNum(2) = 0
+				Set Variable: i:= i+1
+				Evaluate expression: MyArray1Set(i,NthNodeNum(2))
+				Set Variable: i:= i+1
+				Evaluate expression: MyArray1Set(i,NthNodeNum(3))
+			End if
+			If: NthNeighbourNum(3) = 0
+				Set Variable: i:= i+1
+				Evaluate expression: MyArray1Set(i,NthNodeNum(3))
+				Set Variable: i:= i+1
+				Evaluate expression: MyArray1Set(i,NthNodeNum(4))
+			End if
+			If: NthNodeNum(1)!=NthNodeNum(4)
+				If: NthNeighbourNum(4) = 0
+					Set Variable: i:= i+1
+					Evaluate expression: MyArray1Set(i,NthNodeNum(4))
+					Set Variable: i:= i+1
+					Evaluate expression: MyArray1Set(i,NthNodeNum(1))
+				End if
+			End if
+		End loop
+		# 
+		Set Variable: ll:= 0
+		Set Variable: control:= 1
+		Loop for: Variable veces from: 1 to: NumberOfBoundaryNodes-1 step: 1
+			Set Variable: kk:= 0
+			If: (control= 1)
+				Set Variable: pare:= 1
+				Loop for: Variable i from: 1 to: NumberOfBoundaryNodes-1 step: 1
+					If: pare
+						If: (MyArray1Get(i-1)>0 )
+							Evaluate expression: MyArray2Set(0,MyArray1Get(i-1))
+							Evaluate expression: MyArray2Set(1,MyArray1Get(i))
+							Set Variable: primero:= MyArray1Get(i)
+							Set Variable: atras:= MyArray1Get(i)
+							Evaluate expression: MyArray1Set(i-1,0)
+							Evaluate expression: MyArray1Set(i,0)
+							Set Variable: pare:= 0
+							Set Variable: starti:= i
+							Set Variable: kk:= 1
+						End if
+					End if
+				End loop
+				If: pare = 1
+					Set Variable: control:= 0
+				End if
+				If: pare = 0
+					Set Variable: ok2:= 1
+					Set Variable: control:= 1
+					Loop for: Variable last2 from: 1 to: NumberOfBoundaryNodes-1 step: 1
+						If: ok2
+							Set Variable: ok:= 1
+							Loop for: Variable i from: starti to: NumberOfBoundaryNodes-1 step: 1
+								If: (atras= MyArray1Get(i)) & ok
+									Set Variable: kk:= kk+1
+									Evaluate expression: MyArray2Set((kk),MyArray1Get(i+1))
+									Set Variable: atras:= MyArray1Get(i+1)
+									Evaluate expression: MyArray1Set(i,0)
+									Evaluate expression: MyArray1Set(i+1,0)
+									Set Variable: ok:= 0
+									If: atras=primero
+										Set Variable: ok2:= 0
+									End if
+								End if
+							End loop
+						End if
+					End loop
+					# 
+					# 
+					# Write the boundary nodes in order, one on a line, to a file
+					# 
+					Start a new line
+						Export expression: "-9999" [G0]
+					End line
+					Start a new line
+						Export expression: kk+1 [G0]
+					End line
+					Loop for: Variable i from: 0 to: kk step: 1
+						Start a new line
+							Export expression: MyArray2Get(i) [G0]
+						End line
+					End loop
+					# 
+				End if
+			End if
+		End loop
+	End if
+	Evaluate expression: MyArray1Dispose()
+	Evaluate expression: MyArray2Dispose()
+End file
+# This is Argus MeshMaker default template for triangular mesh layers
+Redirect output to: $BaseNameNoExt$.fed
+	Start a new line
+		Export expression: NumElements(); [I8]
+		Export expression: NumNodes(); [I8]
+		Export expression: NumElemParameters(); [I8]
+		Export expression: NumNodeParameters() [I8]
+	End line
+	Loop for: Nodes
+		Start a new line
+			Export expression: NodeNumber(); [I9]
+			Export expression: PositionX(); [F14.2]
+			Export expression: PositionY() [F14.2]
+			Loop for: Parameters
+				Export expression: ;$Parameter$ [G18]
+			End loop
+		End line
+	End loop
+	Loop for: Elements
+		Start a new line
+			Export expression: ElementNumber(); [I8]
+			Export expression: NthNodeNum(1); [I8]
+			Export expression: NthNodeNum(2); [I8]
+			Export expression: NthNodeNum(3) [I8]
+			Loop for: Parameters
+				Export expression: ;$Parameter$ [G18]
+			End loop
+		End line
+	End loop
+End file
+# WRITE .IFL FILE
+Redirect output to: $BaseNameNoExt$.ifl
+	Start a new line
+		Export expression: NumNodeParameters() [I8]
+		Export expression: CountNodes(NodeOnBoundary()) [I8]
+	End line
+	Loop for: Nodes
+		If: NodeOnBoundary()
+			# Set Variable: Test2:= 0
+			# Loop for: Parameters
+			#  if: $HasTag(bc)$
+			#    Redirect output to: $BaseNameNoExt$.txt
+			# Alert: "Found BC"
+			#     Set Variable: Test2:= 1
+			#     Start a new line
+			#       Export expression: NodeNumber(); [I9]
+			#        Export expression: Test2; [I9]
+			#      End line
+			#    End file
+			#  End if
+			# End loop
+			# if: Test2
+			# Set Variable: Test2:= 0
+			Start a new line
+				Export expression: NodeNumber(); [I9]
+				Loop for: Parameters
+					Export expression: ;$Parameter$ [G18]
+				End loop
+			End line
+			# End if
+		End if
+	End loop
+End file
+

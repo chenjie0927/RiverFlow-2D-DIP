@@ -1,0 +1,427 @@
+Layer:
+{
+	Name: "Domain Outline"
+	Units: "Density"
+	Type: "Domain"
+	Visible: Yes
+	Interpretation Method: Nearest
+	
+	Parameter: 
+	{
+		Name: "Density"
+		Units: "Density"
+		Value Type: Real
+		Value: "0"
+		Parameter Type: Layer
+	}
+}
+Layer:
+{
+	Name: "Density"
+	Units: ""
+	Type: "Information"
+	Visible: Yes
+	Interpretation Method: Nearest
+	
+	Parameter: 
+	{
+		Name: "Density"
+		Units: ""
+		Value Type: Real
+		Value: "0"
+		Parameter Type: Layer
+	}
+}
+
+
+Layer:
+{
+	Name: "FiniteElementMesh"
+	Units: ""
+	Type: "Mesh"
+	Visible: Yes
+	Domain Layer: "Domain Outline"
+	Density Layer: "Density"
+	
+	Parameter: 
+	{
+		Name: "BedElevation"
+		Units: "ft or m"
+		Value Type: Real
+		Value: "BedElevations.BedElevation"
+		Parameter Type: Layer
+	}
+	
+	Parameter: 
+	{
+		Name: "InitialWSE"
+		Units: "ft or m"
+		Value Type: Real
+		Value: "InitialWSE"
+		Parameter Type: Node
+	}
+	
+	Parameter: 
+	{
+		Name: "N Maning"
+		Units: ""
+		Value Type: Real
+		Value: "ManningsN"
+		Parameter Type: Layer
+	}
+	
+	Parameter: 
+	{
+		Name: "BCType"
+		Units: ""
+		Value Type: Integer
+		Value: "BoundaryConditions.BCType"
+		Parameter Type: Node
+	}
+	
+	Parameter: 
+	{
+		Name: "BCFileName"
+		Units: ""
+		Value Type: String
+		Value: "BoundaryConditions.BCFileName"
+		Parameter Type: Node
+	}
+	
+	Template: 
+	{
+		Line: "# RiverFLO-2D export template"
+		Line: "Define Variable: i [Integer]"
+		Line: "Define Variable: j [Integer]"
+		Line: "Define Variable: starti [Integer]"
+		Line: "Define Variable: last2 [Integer]"
+		Line: "Define Variable: NumberOfBoundarySegments [Integer]"
+		Line: "Define Variable: NumberOfBoundaryNodes [Integer]"
+		Line: "Define Variable: ok [Integer]"
+		Line: "Define Variable: control [Integer]"
+		Line: "Define Variable: ok2 [Integer]"
+		Line: "Define Variable: kk [Integer]"
+		Line: "Define Variable: veces [Integer]"
+		Line: "Define Variable: Test [Integer]"
+		Line: "Define Variable: pare [Integer]"
+		Line: "Define Variable: primero [Integer]"
+		Line: "Define Variable: atras [Integer]"
+		Line: "Set Variable: NumberOfBoundarySegments:= 0"
+		Line: "Define Variable: ll [Real]"
+		Line: "Define Variable: Test2 [Integer]"
+		Line: "# "
+		Line: "# "
+		Line: "Set Variable: j:= 0"
+		Line: "Set Variable: i:= -1"
+		Line: "Set Variable: last2:= 0"
+		Line: "Set Variable: NumberOfBoundaryNodes:= 2*CountNodes(NodeOnBoundary())"
+		Line: "# "
+		Line: "# This part of the template will calculate the element edges that"
+		Line: "# are on the boundary of the mesh (triangular mesh) and load them"
+		Line: "# into an array (MyArray1.DLL)"
+		Line: "# "
+		Line: "# This part is a modification of the OutEdge template"
+		Line: "# "
+		Line: "Redirect output to: $BaseNameNoExt$.TBA"
+		Line: "\t# "
+		Line: "\t# Initialize two arrays - for each one an Array PIE dll"
+		Line: "\t# file must be in the Argus PIE directory"
+		Line: "\t# "
+		Line: "\tSet Variable: ok:= 1"
+		Line: "\tSet Variable: Test:= MyArray1Init(NumberOfBoundaryNodes)"
+		Line: "\tIf: IsNAN(Test)"
+		Line: "\t\tAlert: \"The PIE MyArray1.DLL could not be found! Please make sure such a PIE is in the ArgusPIE directory!\""
+		Line: "\t\tSet Variable: ok:= 0"
+		Line: "\tEnd if"
+		Line: "\t# "
+		Line: "\tSet Variable: ok:= 1"
+		Line: "\tSet Variable: Test:= MyArray2Init(NumberOfBoundaryNodes)"
+		Line: "\tIf: IsNAN(Test)"
+		Line: "\t\tAlert: \"The PIE MyArray2.DLL could not be found! Please make sure such a PIE is in the ArgusPIE directory!\""
+		Line: "\t\tSet Variable: ok:= 0"
+		Line: "\tEnd if"
+		Line: "\t# "
+		Line: "\tIf: ok"
+		Line: "\t\t# Fill both arrays with zeros"
+		Line: "\t\tLoop for: Variable i from: 0 to: NumberOfBoundaryNodes-1 step: 1"
+		Line: "\t\t\tEvaluate expression: MyArray1Set(i,0)"
+		Line: "\t\t\tEvaluate expression: MyArray2Set(i,0)"
+		Line: "\t\tEnd loop"
+		Line: "\t\t# "
+		Line: "\t\t# This part will loop through the elements and assign the array members the node numbers"
+		Line: "\t\t# Set i to -1 because the arrays start at 0"
+		Line: "\t\tSet Variable: i:= -1"
+		Line: "\t\t# "
+		Line: "\t\tLoop for: Elements"
+		Line: "\t\t\t# Output all boundary edges"
+		Line: "\t\t\t# the output (for each edge )will be:"
+		Line: "\t\t\t# elem node1 node2"
+		Line: "\t\t\t# where:"
+		Line: "\t\t\t# elem is the number of the element"
+		Line: "\t\t\t# node1 is the first node of the edge (counterclockwise when looking from elem)"
+		Line: "\t\t\t# node2 is the second node of the edge"
+		Line: "\t\t\tIf: NthNeighbourNum(1) = 0"
+		Line: "\t\t\t\tSet Variable: i:= i+1"
+		Line: "\t\t\t\tEvaluate expression: MyArray1Set(i,NthNodeNum(1))"
+		Line: "\t\t\t\tSet Variable: i:= i+1"
+		Line: "\t\t\t\tEvaluate expression: MyArray1Set(i,NthNodeNum(2))"
+		Line: "\t\t\tEnd if"
+		Line: "\t\t\tIf: NthNeighbourNum(2) = 0"
+		Line: "\t\t\t\tSet Variable: i:= i+1"
+		Line: "\t\t\t\tEvaluate expression: MyArray1Set(i,NthNodeNum(2))"
+		Line: "\t\t\t\tSet Variable: i:= i+1"
+		Line: "\t\t\t\tEvaluate expression: MyArray1Set(i,NthNodeNum(3))"
+		Line: "\t\t\tEnd if"
+		Line: "\t\t\tIf: NthNeighbourNum(3) = 0"
+		Line: "\t\t\t\tSet Variable: i:= i+1"
+		Line: "\t\t\t\tEvaluate expression: MyArray1Set(i,NthNodeNum(3))"
+		Line: "\t\t\t\tSet Variable: i:= i+1"
+		Line: "\t\t\t\tEvaluate expression: MyArray1Set(i,NthNodeNum(4))"
+		Line: "\t\t\tEnd if"
+		Line: "\t\t\tIf: NthNodeNum(1)!=NthNodeNum(4)"
+		Line: "\t\t\t\tIf: NthNeighbourNum(4) = 0"
+		Line: "\t\t\t\t\tSet Variable: i:= i+1"
+		Line: "\t\t\t\t\tEvaluate expression: MyArray1Set(i,NthNodeNum(4))"
+		Line: "\t\t\t\t\tSet Variable: i:= i+1"
+		Line: "\t\t\t\t\tEvaluate expression: MyArray1Set(i,NthNodeNum(1))"
+		Line: "\t\t\t\tEnd if"
+		Line: "\t\t\tEnd if"
+		Line: "\t\tEnd loop"
+		Line: "\t\t# "
+		Line: "\t\tSet Variable: ll:= 0"
+		Line: "\t\tSet Variable: control:= 1"
+		Line: "\t\tLoop for: Variable veces from: 1 to: NumberOfBoundaryNodes-1 step: 1"
+		Line: "\t\t\tSet Variable: kk:= 0"
+		Line: "\t\t\tIf: (control= 1)"
+		Line: "\t\t\t\tSet Variable: pare:= 1"
+		Line: "\t\t\t\tLoop for: Variable i from: 1 to: NumberOfBoundaryNodes-1 step: 1"
+		Line: "\t\t\t\t\tIf: pare"
+		Line: "\t\t\t\t\t\tIf: (MyArray1Get(i-1)>0 )"
+		Line: "\t\t\t\t\t\t\tEvaluate expression: MyArray2Set(0,MyArray1Get(i-1))"
+		Line: "\t\t\t\t\t\t\tEvaluate expression: MyArray2Set(1,MyArray1Get(i))"
+		Line: "\t\t\t\t\t\t\tSet Variable: primero:= MyArray1Get(i)"
+		Line: "\t\t\t\t\t\t\tSet Variable: atras:= MyArray1Get(i)"
+		Line: "\t\t\t\t\t\t\tEvaluate expression: MyArray1Set(i-1,0)"
+		Line: "\t\t\t\t\t\t\tEvaluate expression: MyArray1Set(i,0)"
+		Line: "\t\t\t\t\t\t\tSet Variable: pare:= 0"
+		Line: "\t\t\t\t\t\t\tSet Variable: starti:= i"
+		Line: "\t\t\t\t\t\t\tSet Variable: kk:= 1"
+		Line: "\t\t\t\t\t\tEnd if"
+		Line: "\t\t\t\t\tEnd if"
+		Line: "\t\t\t\tEnd loop"
+		Line: "\t\t\t\tIf: pare = 1"
+		Line: "\t\t\t\t\tSet Variable: control:= 0"
+		Line: "\t\t\t\tEnd if"
+		Line: "\t\t\t\tIf: pare = 0"
+		Line: "\t\t\t\t\tSet Variable: ok2:= 1"
+		Line: "\t\t\t\t\tSet Variable: control:= 1"
+		Line: "\t\t\t\t\tLoop for: Variable last2 from: 1 to: NumberOfBoundaryNodes-1 step: 1"
+		Line: "\t\t\t\t\t\tIf: ok2"
+		Line: "\t\t\t\t\t\t\tSet Variable: ok:= 1"
+		Line: "\t\t\t\t\t\t\tLoop for: Variable i from: starti to: NumberOfBoundaryNodes-1 step: 1"
+		Line: "\t\t\t\t\t\t\t\tIf: (atras= MyArray1Get(i)) & ok"
+		Line: "\t\t\t\t\t\t\t\t\tSet Variable: kk:= kk+1"
+		Line: "\t\t\t\t\t\t\t\t\tEvaluate expression: MyArray2Set((kk),MyArray1Get(i+1))"
+		Line: "\t\t\t\t\t\t\t\t\tSet Variable: atras:= MyArray1Get(i+1)"
+		Line: "\t\t\t\t\t\t\t\t\tEvaluate expression: MyArray1Set(i,0)"
+		Line: "\t\t\t\t\t\t\t\t\tEvaluate expression: MyArray1Set(i+1,0)"
+		Line: "\t\t\t\t\t\t\t\t\tSet Variable: ok:= 0"
+		Line: "\t\t\t\t\t\t\t\t\tIf: atras=primero"
+		Line: "\t\t\t\t\t\t\t\t\t\tSet Variable: ok2:= 0"
+		Line: "\t\t\t\t\t\t\t\t\tEnd if"
+		Line: "\t\t\t\t\t\t\t\tEnd if"
+		Line: "\t\t\t\t\t\t\tEnd loop"
+		Line: "\t\t\t\t\t\tEnd if"
+		Line: "\t\t\t\t\tEnd loop"
+		Line: "\t\t\t\t\t# "
+		Line: "\t\t\t\t\t# "
+		Line: "\t\t\t\t\t# Write the boundary nodes in order, one on a line, to a file"
+		Line: "\t\t\t\t\t# "
+		Line: "\t\t\t\t\tStart a new line"
+		Line: "\t\t\t\t\t\tExport expression: \"-9999\" [G0]"
+		Line: "\t\t\t\t\tEnd line"
+		Line: "\t\t\t\t\tStart a new line"
+		Line: "\t\t\t\t\t\tExport expression: kk+1 [G0]"
+		Line: "\t\t\t\t\tEnd line"
+		Line: "\t\t\t\t\tLoop for: Variable i from: 0 to: kk step: 1"
+		Line: "\t\t\t\t\t\tStart a new line"
+		Line: "\t\t\t\t\t\t\tExport expression: MyArray2Get(i) [G0]"
+		Line: "\t\t\t\t\t\tEnd line"
+		Line: "\t\t\t\t\tEnd loop"
+		Line: "\t\t\t\t\t# "
+		Line: "\t\t\t\tEnd if"
+		Line: "\t\t\tEnd if"
+		Line: "\t\tEnd loop"
+		Line: "\tEnd if"
+		Line: "\tEvaluate expression: MyArray1Dispose()"
+		Line: "\tEvaluate expression: MyArray2Dispose()"
+		Line: "End file"
+		Line: "# This is Argus MeshMaker default template for triangular mesh layers"
+		Line: "Redirect output to: $BaseNameNoExt$.fed"
+		Line: "\tStart a new line"
+		Line: "\t\tExport expression: NumElements(); [I8]"
+		Line: "\t\tExport expression: NumNodes(); [I8]"
+		Line: "\t\tExport expression: NumElemParameters(); [I8]"
+		Line: "\t\tExport expression: NumNodeParameters() [I8]"
+		Line: "\tEnd line"
+		Line: "\tLoop for: Nodes"
+		Line: "\t\tStart a new line"
+		Line: "\t\t\tExport expression: NodeNumber(); [I9]"
+		Line: "\t\t\tExport expression: PositionX(); [F14.2]"
+		Line: "\t\t\tExport expression: PositionY() [F14.2]"
+		Line: "\t\t\tLoop for: Parameters"
+		Line: "\t\t\t\tExport expression: ;$Parameter$ [G18]"
+		Line: "\t\t\tEnd loop"
+		Line: "\t\tEnd line"
+		Line: "\tEnd loop"
+		Line: "\tLoop for: Elements"
+		Line: "\t\tStart a new line"
+		Line: "\t\t\tExport expression: ElementNumber(); [I8]"
+		Line: "\t\t\tExport expression: NthNodeNum(1); [I8]"
+		Line: "\t\t\tExport expression: NthNodeNum(2); [I8]"
+		Line: "\t\t\tExport expression: NthNodeNum(3) [I8]"
+		Line: "\t\t\tLoop for: Parameters"
+		Line: "\t\t\t\tExport expression: ;$Parameter$ [G18]"
+		Line: "\t\t\tEnd loop"
+		Line: "\t\tEnd line"
+		Line: "\tEnd loop"
+		Line: "End file"
+		Line: "# WRITE .IFL FILE"
+		Line: "Redirect output to: $BaseNameNoExt$.ifl"
+		Line: "\tStart a new line"
+		Line: "\t\tExport expression: NumNodeParameters() [I8]"
+		Line: "\t\tExport expression: CountNodes(NodeOnBoundary()) [I8]"
+		Line: "\tEnd line"
+		Line: "\tLoop for: Nodes"
+		Line: "\t\tIf: NodeOnBoundary()"
+		Line: "\t\t\t# Set Variable: Test2:= 0"
+		Line: "\t\t\t# Loop for: Parameters"
+		Line: "\t\t\t#  if: $HasTag(bc)$"
+		Line: "\t\t\t#    Redirect output to: $BaseNameNoExt$.txt"
+		Line: "\t\t\t# Alert: \"Found BC\""
+		Line: "\t\t\t#     Set Variable: Test2:= 1"
+		Line: "\t\t\t#     Start a new line"
+		Line: "\t\t\t#       Export expression: NodeNumber(); [I9]"
+		Line: "\t\t\t#        Export expression: Test2; [I9]"
+		Line: "\t\t\t#      End line"
+		Line: "\t\t\t#    End file"
+		Line: "\t\t\t#  End if"
+		Line: "\t\t\t# End loop"
+		Line: "\t\t\t# if: Test2"
+		Line: "\t\t\t# Set Variable: Test2:= 0"
+		Line: "\t\t\tStart a new line"
+		Line: "\t\t\t\tExport expression: NodeNumber(); [I9]"
+		Line: "\t\t\t\tLoop for: Parameters"
+		Line: "\t\t\t\t\tExport expression: ;$Parameter$ [G18]"
+		Line: "\t\t\t\tEnd loop"
+		Line: "\t\t\tEnd line"
+		Line: "\t\t\t# End if"
+		Line: "\t\tEnd if"
+		Line: "\tEnd loop"
+		Line: "End file"
+		Line: ""
+	}
+}
+
+
+Layer:
+{
+	Name: "ManningsN"
+	Units: "Units"
+	Type: "Information"
+	Visible: Yes
+	Interpretation Method: Exact
+	
+	Parameter: 
+	{
+		Name: "ManningsN"
+		Units: "Units"
+		Value Type: Real
+		Value: "0.02"
+		Parameter Type: Layer
+	}
+}
+
+
+Layer:
+{
+	Name: "InitialWSE"
+	Units: "Units"
+	Type: "Information"
+	Visible: Yes
+	Interpretation Method: Exact
+	
+	Parameter: 
+	{
+		Name: "InitialWSE"
+		Units: "Units"
+		Value Type: Real
+		Value: "0"
+		Parameter Type: Layer
+	}
+}
+
+
+Layer:
+{
+	Name: "BedElevations"
+	Units: "Units"
+	Type: "Data"
+	Visible: Yes
+	Interpretation Method: Nearest
+	
+	Parameter: 
+	{
+		Name: "BedElevation"
+		Units: ""
+		Value Type: Real
+		Value: "0"
+		Parameter Type: Layer
+	}
+}
+
+
+Layer:
+{
+	Name: "BoundaryConditions"
+	Units: "Units"
+	Type: "Information"
+	Visible: Yes
+	Interpretation Method: Exact
+	
+	Parameter: 
+	{
+		Name: "BCType"
+		Units: ""
+		Value Type: Integer
+		Value: "0"
+		Parameter Type: Layer
+	}
+	
+	Parameter: 
+	{
+		Name: "BCFileName"
+		Units: ""
+		Value Type: String
+		Value: "0"
+		Parameter Type: Layer
+	}
+}
+
+
+Layer:
+{
+	Name: "Maps"
+	Units: ""
+	Type: "Maps"
+	Visible: No
+	
+	Parameter: 
+	{
+		Name: "Maps"
+		Units: ""
+		Value Type: Real
+		Value: "0"
+		Parameter Type: Layer
+	}
+}
